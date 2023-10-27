@@ -25,6 +25,7 @@
 - config/storage.ymlを編集
 - config/environments/development.rbを編集
 ![0507](0507.png)
+![0508](0508.png)
 
 ## 構成図
-![0508](0508.png)
+![0509](0509.png)
