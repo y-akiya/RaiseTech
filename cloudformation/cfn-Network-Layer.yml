@@ -1,0 +1,161 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: create network layer
+
+Parameters: 
+  NameBase:
+    Type: String
+    Default: cfntest-rt-lecture10
+
+Resources: 
+  # --------- VPCの作成 --------- 
+  cfnVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-VPC
+
+  # --------- サブネットの作成 --------- 
+  cfnPublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      VpcId: !Ref cfnVPC
+      CidrBlock: 10.0.0.0/20
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-PublicSubnet1
+
+  cfnPublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      VpcId: !Ref cfnVPC
+      CidrBlock: 10.0.16.0/20
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-PublicSubnet2
+
+  cfnPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      VpcId: !Ref cfnVPC
+      CidrBlock: 10.0.128.0/20
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-PrivateSubnet1
+
+  cfnPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      VpcId: !Ref cfnVPC
+      CidrBlock: 10.0.144.0/20
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-PrivateSubnet2
+
+  # --------- インターネットゲートウェイの作成 --------- 
+  cfnInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-InternetGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref cfnVPC
+      InternetGatewayId: !Ref cfnInternetGateway
+
+  # --------- ルートテーブルの作成（public）--------- 
+  cfnPublicSubnetRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref cfnVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-PublicSubnetRoute
+
+  cfnPublicSubnetRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref cfnPublicSubnetRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref cfnInternetGateway
+
+  cfnPublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref cfnPublicSubnet1
+      RouteTableId: !Ref cfnPublicSubnetRouteTable
+
+  cfnPublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref cfnPublicSubnet2
+      RouteTableId: !Ref cfnPublicSubnetRouteTable
+
+  # --------- ルートテーブルの作成（private）--------- 
+  cfnPrivateSubnet1RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref cfnVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-PrivateSubnet1Route
+
+  cfnPrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref cfnPrivateSubnet1
+      RouteTableId: !Ref cfnPrivateSubnet1RouteTable
+
+  cfnPrivateSubnet2RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref cfnVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-PrivateSubnet2Route
+
+  cfnPrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref cfnPrivateSubnet2
+      RouteTableId: !Ref cfnPrivateSubnet2RouteTable
+
+Outputs:
+  VPC:
+    Value: !Ref cfnVPC
+    Export: 
+      Name: cfn-Network-Layer-VPC
+
+  PublicSubnet1:
+    Value: !Ref cfnPublicSubnet1
+    Export: 
+      Name: cfn-Network-Layer-PublicSubnet1
+
+  PublicSubnet2:
+    Value: !Ref cfnPublicSubnet2
+    Export: 
+      Name: cfn-Network-Layer-PublicSubnet2
+
+  PrivateSubnet1:
+    Value: !Ref cfnPrivateSubnet1
+    Export: 
+      Name: cfn-Network-Layer-PrivateSubnet1
+
+  PrivateSubnet2:
+    Value: !Ref cfnPrivateSubnet2
+    Export: 
+      Name: cfn-Network-Layer-PrivateSubnet2
