@@ -17,7 +17,7 @@ Resources:
     Properties:
       GroupName: !Sub ${NameBase}-ALBSecurityGroup
       GroupDescription: http
-      VpcId: !ImportValue cfn-Network-Layer-VPC
+      VpcId: !ImportValue cfn-Network-Layer-VPCId
       SecurityGroupIngress:
         -
           IpProtocol: tcp
@@ -31,7 +31,7 @@ Resources:
     Properties:
       GroupName: !Sub ${NameBase}-EC2SecurityGroup
       GroupDescription: http,ssh
-      VpcId: !ImportValue cfn-Network-Layer-VPC
+      VpcId: !ImportValue cfn-Network-Layer-VPCId
       SecurityGroupIngress:
         -
           IpProtocol: tcp
@@ -50,7 +50,7 @@ Resources:
     Properties:
       GroupName: !Sub ${NameBase}-RDSSecurityGroup
       GroupDescription: mySQL
-      VpcId: !ImportValue cfn-Network-Layer-VPC
+      VpcId: !ImportValue cfn-Network-Layer-VPCId
       SecurityGroupIngress:
         -
           IpProtocol: tcp
@@ -84,10 +84,16 @@ Resources:
         Statement:
         - Effect: Allow
           Action:
-            - s3:*
+            - s3:ListBucket
           Resource:
-            - !Sub arn:aws:s3:::${NameBase}*
-            - !Sub arn:aws:s3:::${NameBase}*/*
+            - !Sub arn:aws:s3:::${NameBase}
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:DeleteObject
+            - s3:PutObject
+          Resource:
+            - !Sub arn:aws:s3:::${NameBase}/*
       Roles:
         - !Ref cfnS3AccessRole
 
@@ -99,23 +105,24 @@ Resources:
       Roles:
       - !Ref cfnS3AccessRole
 
+  # --------- Outputs --------- 
 Outputs:
-  ALBSecurityGroup:
+  ALBSecurityGroupId:
     Value: !Ref cfnALBSecurityGroup
     Export: 
-      Name: cfn-Security-Layer-ALBSecurityGroup
+      Name: cfn-Security-Layer-ALBSecurityGroupId
 
-  EC2SecurityGroup:
+  EC2SecurityGroupId:
     Value: !Ref cfnEC2SecurityGroup
     Export: 
-      Name: cfn-Security-Layer-EC2SecurityGroup
+      Name: cfn-Security-Layer-EC2SecurityGroupId
 
-  RDSSecurityGroup:
+  RDSSecurityGroupId:
     Value: !Ref cfnRDSSecurityGroup
     Export: 
-      Name: cfn-Security-Layer-RDSSecurityGroup
+      Name: cfn-Security-Layer-RDSSecurityGroupId
 
-  S3AccessInstanceProfile:
+  S3AccessInstanceProfileName:
     Value: !Ref cfnS3AccessInstanceProfile
     Export: 
-      Name: cfn-Security-Layer-S3AccessInstanceProfile
+      Name: cfn-Security-Layer-S3AccessInstanceProfileName

@@ -45,16 +45,16 @@ Resources:
       NetworkInterfaces: 
         - AssociatePublicIpAddress: "true"
           DeviceIndex: "0"
-          SubnetId: !ImportValue cfn-Network-Layer-PublicSubnet1
+          SubnetId: !ImportValue cfn-Network-Layer-PublicSubnet1Id
           GroupSet:
-            - !ImportValue cfn-Security-Layer-EC2SecurityGroup
+            - !ImportValue cfn-Security-Layer-EC2SecurityGroupId
       BlockDeviceMappings: 
       - DeviceName: "/dev/xvda"
         Ebs: 
           VolumeSize: 8
           VolumeType: "gp2"
       IamInstanceProfile:
-        !ImportValue  cfn-Security-Layer-S3AccessInstanceProfile
+        !ImportValue cfn-Security-Layer-S3AccessInstanceProfileName
       UserData: !Base64 |
         #!/bin/bash -ex
         sudo yum update -y
@@ -69,10 +69,10 @@ Resources:
       Type: application
       Scheme: internet-facing
       SecurityGroups:
-        - !ImportValue cfn-Security-Layer-ALBSecurityGroup
+        - !ImportValue cfn-Security-Layer-ALBSecurityGroupId
       Subnets:
-        - !ImportValue cfn-Network-Layer-PublicSubnet1
-        - !ImportValue cfn-Network-Layer-PublicSubnet2
+        - !ImportValue cfn-Network-Layer-PublicSubnet1Id
+        - !ImportValue cfn-Network-Layer-PublicSubnet2Id
       IpAddressType: ipv4
       Tags:
         - Key: Name
@@ -107,7 +107,7 @@ Resources:
       HealthCheckIntervalSeconds: 30
       Matcher:
         HttpCode: '200'
-      VpcId: !ImportValue cfn-Network-Layer-VPC
+      VpcId: !ImportValue cfn-Network-Layer-VPCId
       TargetType: instance
       Targets:
         - Id: !Ref cfnEC2Instance
@@ -136,7 +136,7 @@ Resources:
       StorageEncrypted: true
       StorageType: gp2
       VPCSecurityGroups:
-        - !ImportValue cfn-Security-Layer-RDSSecurityGroup
+        - !ImportValue cfn-Security-Layer-RDSSecurityGroupId
       Tags:
         - Key: Name
           Value: !Sub ${NameBase}-RDS
@@ -147,8 +147,8 @@ Resources:
       DBSubnetGroupName: !Sub ${NameBase}-DBSubnetGroup
       DBSubnetGroupDescription: DBSubnetGroup
       SubnetIds: 
-        - !ImportValue cfn-Network-Layer-PrivateSubnet1
-        - !ImportValue cfn-Network-Layer-PrivateSubnet2
+        - !ImportValue cfn-Network-Layer-PrivateSubnet1Id
+        - !ImportValue cfn-Network-Layer-PrivateSubnet2Id
 
   # --------- S3の作成 --------- 
   cfnS3Bucket:

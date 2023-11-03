@@ -134,28 +134,29 @@ Resources:
       SubnetId: !Ref cfnPrivateSubnet2
       RouteTableId: !Ref cfnPrivateSubnet2RouteTable
 
+  # --------- Outputs --------- 
 Outputs:
-  VPC:
+  VPCId:
     Value: !Ref cfnVPC
     Export: 
-      Name: cfn-Network-Layer-VPC
+      Name: cfn-Network-Layer-VPCId
 
-  PublicSubnet1:
+  PublicSubnet1Id:
     Value: !Ref cfnPublicSubnet1
     Export: 
-      Name: cfn-Network-Layer-PublicSubnet1
+      Name: cfn-Network-Layer-PublicSubnet1Id
 
-  PublicSubnet2:
+  PublicSubnet2Id:
     Value: !Ref cfnPublicSubnet2
     Export: 
-      Name: cfn-Network-Layer-PublicSubnet2
+      Name: cfn-Network-Layer-PublicSubnet2Id
 
-  PrivateSubnet1:
+  PrivateSubnet1Id:
     Value: !Ref cfnPrivateSubnet1
     Export: 
-      Name: cfn-Network-Layer-PrivateSubnet1
+      Name: cfn-Network-Layer-PrivateSubnet1Id
 
-  PrivateSubnet2:
+  PrivateSubnet2Id:
     Value: !Ref cfnPrivateSubnet2
     Export: 
-      Name: cfn-Network-Layer-PrivateSubnet2
+      Name: cfn-Network-Layer-PrivateSubnet2Id
