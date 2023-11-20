@@ -1,0 +1,19 @@
+- hosts: server
+  roles:
+    - { role: init, tags: init }
+    - { role: nodejs, tags: nodejs }
+    - { role: mysql, tags: mysql }
+    - { role: ruby, tags: ruby }
+    - { role: app, tags: app }
+    - { role: nginx, tags: nginx }
+    
+  vars:
+    app_repo: https://github.com/yuta-ushijima/raisetech-live8-sample-app.git
+    app_home: /var/www/raisetech-live8-sample-app
+    aws_alb_host: "{{ lookup('env', 'AWS_ALB_HOST') }}"
+    aws_db_host: "{{ lookup('env', 'AWS_DB_HOST') }}"
+    aws_db_user: "{{ lookup('env', 'AWS_DB_USER') }}"
+    aws_db_pw: "{{ lookup('env', 'AWS_DB_PW') }}"
+    aws_s3_bucket: "cfntest-rt-lecture10"
+    node_version: "17.9.1"
+    ruby_version: "3.1.2"

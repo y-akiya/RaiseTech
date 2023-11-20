@@ -1,0 +1,45 @@
+- name: directory check
+  stat:
+    path: "{{ app_home }}"
+  register: app_home_check
+  
+- name: change permission of directory
+  file:
+    path: "{{ app_home }}"
+    state: directory
+    owner: "{{ ansible_ssh_user }}"
+    group: "{{ ansible_ssh_user }}"
+    mode: "775"
+    recurse: yes
+  become: yes
+  when: app_home_check.stat.exists == false
+
+- name: get sample application
+  git:
+    repo: "{{ app_repo }}"
+    dest: "{{ app_home }}"
+  when: app_home_check.stat.exists == false
+
+- name: create config files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop:
+    - { src: 'database.yml.j2', dest: "{{ app_home }}/config/database.yml" }
+    - { src: 'storage.yml.j2', dest: "{{ app_home }}/config/storage.yml" }
+    - { src: 'unicorn.rb.j2', dest: "{{ app_home }}/config/unicorn.rb" }
+    - { src: 'development.rb.j2', dest: "{{ app_home }}/config/environments/development.rb" }
+  become: yes
+  when: app_home_check.stat.exists == false
+
+- name: application setup & create database
+  shell: bash -lc "bin/setup"
+  args:
+    chdir: "{{ app_home }}"
+  when: app_home_check.stat.exists == false
+    
+- name: precompile application assets
+  shell: bash -lc "rails assets:precompile"
+  args:
+    chdir: "{{ app_home }}"
+  when: app_home_check.stat.exists == false
