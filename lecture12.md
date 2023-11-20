@@ -10,4 +10,4 @@
 ![1201](./images/1201.png)
 
 ### 設定ファイル
-[config.yml](./.circleci/config.yml)
+[config.yml](./circleci/lecture12/config.yml)

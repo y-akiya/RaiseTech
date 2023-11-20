@@ -48,11 +48,11 @@
 
 ### テンプレート
 - Network Layer  
-[cfn-Network-Layer.yml](./cloudformation/cfn-Network-Layer.yml)
+[cfn-Network-Layer.yml](./cloudformation/lecture10/cfn-Network-Layer.yml)
 
 - Security Layer  
-[cfn-Security-Layer.yml](./cloudformation/cfn-Security-Layer.yml)
+[cfn-Security-Layer.yml](./cloudformation/lecture10/cfn-Security-Layer.yml)
 
 - Application Layer  
-[cfn-Application-Layer.yml](./cloudformation/cfn-Application-Layer.yml)
+[cfn-Application-Layer.yml](./cloudformation/lecture10/cfn-Application-Layer.yml)
 
