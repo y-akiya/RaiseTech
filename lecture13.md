@@ -36,10 +36,10 @@
 ![1310](./images/1310.png) 
 
 ### 各種設定内容
-- [CircleCI](./CircleCI/config.yml) 
+- [CircleCI](./circleci/config.yml) 
 
 - [Cloudformation ](./cloudformation) 
 
 - [Ansible ](./ansible) 
 
-- [Servespec ](./servespec) 
+- [Serverspec ](./serverspec) 
