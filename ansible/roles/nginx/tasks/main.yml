@@ -1,0 +1,30 @@
+- name: check nginx installed
+  shell: bash -lc "nginx -v"
+  register: check_nginx
+  changed_when: no
+  ignore_errors: yes
+
+- name: install nginx
+  shell: "amazon-linux-extras install -y nginx1"
+  become: yes
+  when: check_nginx is failed
+
+- name: make rails.conf
+  template:
+    src: rails.conf.j2
+    dest: "/etc/nginx/conf.d/rails.conf"
+  become: yes
+
+- name: start nginx
+  systemd:
+    name: nginx
+    state: started
+  register: start_nginx
+  become: yes
+
+- name: start unicorn
+  shell: bash -lc "bundle exec unicorn_rails -c config/unicorn.rb -E development -D"
+  args: 
+    chdir: "{{ app_home }}"
+  when: start_nginx.changed
+  

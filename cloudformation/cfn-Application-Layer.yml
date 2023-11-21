@@ -1,0 +1,182 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: create application layer
+
+Parameters: 
+  NameBase:
+    Type: String
+    Default: cfntest-rt-lecture10
+
+  LatestAmiId :
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+  KeyPairName:
+    Type: String
+    Default: serverkey1020
+
+  DBUser: 
+    Type: String
+    Default: admin
+
+  # DBPassword: 
+  #   Default: "rdsadmin"
+  #   NoEcho: true
+  #   Type: String
+  #   MinLength: 8
+  #   MaxLength: 41
+  #   AllowedPattern: "[a-zA-Z0-9]*"
+
+Resources: 
+  # --------- キーペアの作成（RSA）--------- 
+  #cfnKeyPair:
+  #  Type: 'AWS::EC2::KeyPair'
+  #  Properties: 
+  #    KeyName: !Ref KeyPairName
+
+  # --------- EC2インスタンスの作成 --------- 
+  cfnEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref KeyPairName
+      DisableApiTermination: false
+      ImageId: !Ref LatestAmiId
+      InstanceType: t2.micro
+      Monitoring: false
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          SubnetId: !ImportValue cfn-Network-Layer-PublicSubnet1Id
+          GroupSet:
+            - !ImportValue cfn-Security-Layer-EC2SecurityGroupId
+      BlockDeviceMappings: 
+      - DeviceName: "/dev/xvda"
+        Ebs: 
+          VolumeSize: 8
+          VolumeType: "gp2"
+      IamInstanceProfile:
+        !ImportValue cfn-Security-Layer-S3AccessInstanceProfileName
+      UserData: !Base64 |
+        #!/bin/bash -ex
+        sudo yum update -y
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-EC2Instance
+
+  # --------- ALBの作成 --------- 
+  cfnALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: application
+      Scheme: internet-facing
+      SecurityGroups:
+        - !ImportValue cfn-Security-Layer-ALBSecurityGroupId
+      Subnets:
+        - !ImportValue cfn-Network-Layer-PublicSubnet1Id
+        - !ImportValue cfn-Network-Layer-PublicSubnet2Id
+      IpAddressType: ipv4
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-ALB
+
+  cfnALBListener: 
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties: 
+      DefaultActions: 
+        - TargetGroupArn: !Ref cfnTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref cfnALB
+      Port: 80
+      Protocol: HTTP
+
+  # --------- ターゲットグループの作成 --------- 
+  cfnTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${NameBase}-TargetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-TargetGroup
+      Port: 80
+      Protocol: HTTP
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: "/"
+      HealthCheckPort: "traffic-port"
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 2
+      HealthCheckTimeoutSeconds: 5
+      HealthCheckIntervalSeconds: 30
+      Matcher:
+        HttpCode: '200'
+      VpcId: !ImportValue cfn-Network-Layer-VPCId
+      TargetType: instance
+      Targets:
+        - Id: !Ref cfnEC2Instance
+
+  # --------- RDSの作成 --------- 
+  cfnRDS:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: 20
+      DBInstanceClass: db.t3.micro
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: false
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      BackupRetentionPeriod: 1
+      DBInstanceIdentifier: !Sub ${NameBase}-db01
+      DBParameterGroupName: default.mysql8.0
+      DBSubnetGroupName: !Ref cfnDBSubnetGroup
+      Engine: mysql
+      EngineVersion: 8.0.34
+      MasterUsername: !Ref DBUser
+      # MasterUserPassword: !Ref DBPassword
+      MasterUserPassword: '{{resolve:ssm-secure:raisetech-rds-password:1}}'
+      MultiAZ: false
+      OptionGroupName: default:mysql-8-0
+      Port: 3306
+      PubliclyAccessible: false
+      StorageEncrypted: true
+      StorageType: gp2
+      VPCSecurityGroups:
+        - !ImportValue cfn-Security-Layer-RDSSecurityGroupId
+      Tags:
+        - Key: Name
+          Value: !Sub ${NameBase}-RDS
+
+  cfnDBSubnetGroup: 
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties: 
+      DBSubnetGroupName: !Sub ${NameBase}-DBSubnetGroup
+      DBSubnetGroupDescription: DBSubnetGroup
+      SubnetIds: 
+        - !ImportValue cfn-Network-Layer-PrivateSubnet1Id
+        - !ImportValue cfn-Network-Layer-PrivateSubnet2Id
+
+  # --------- S3の作成 --------- 
+  cfnS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      BucketName: !Ref NameBase
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'AES256'
+      Tags:
+        - Key: Name
+          Value: !Ref NameBase
+
+  # --------- outputs --------- 
+Outputs:
+  EC2PublicIP:
+    Value: !GetAtt cfnEC2Instance.PublicIp
+    Export:
+      Name: cfnEC2Instance-PublicIP   
+
+  RDSEndpoint:
+    Value: !GetAtt cfnRDS.Endpoint.Address
+    Export:
+      Name: cfnRDS-Endpoint
+
+  ALBDNSName:
+    Value: !GetAtt cfnALB.DNSName
+    Export:
+      Name: ALB-DNS-Name

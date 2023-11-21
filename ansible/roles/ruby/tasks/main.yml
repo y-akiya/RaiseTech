@@ -1,0 +1,35 @@
+- name: check ruby installed
+  shell: bash -lc "ruby -v | grep {{ ruby_version }}"
+  register: ruby_installed
+  changed_when: no
+  ignore_errors: yes
+
+- name: install rbenv
+  git:
+    repo: https://github.com/sstephenson/rbenv.git
+    dest: ~/.rbenv
+  when: ruby_installed is failed
+
+- name: set global rbenv path
+  lineinfile: 
+    path: ~/.bash_profile 
+    line: "{{ item }}"
+  with_items:
+    - 'export PATH="$HOME/.rbenv/bin:$PATH"'
+    - 'eval "$(rbenv init -)"'
+  when: ruby_installed is failed
+    
+- name: install ruby-build
+  git:
+    repo: https://github.com/sstephenson/ruby-build.git
+    dest: ~/.rbenv/plugins/ruby-build
+  when: ruby_installed is failed
+
+- name: install ruby
+  shell: |
+    /bin/bash -lc "source ~/.bash_profile"
+    /bin/bash -lc "rbenv install {{ ruby_version }}"
+    /bin/bash -lc "rbenv rehash"
+    /bin/bash -lc "rbenv global {{ ruby_version }}"
+  when: ruby_installed is failed
+    

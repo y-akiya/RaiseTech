@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: create security layer
+
+Parameters: 
+  NameBase:
+    Type: String
+    Default: cfntest-rt-lecture10
+
+  # MyLocalIP:
+  #   Type: String
+  #   Default: 133.32.128.8/32
+
+Resources: 
+  # --------- セキュリティグループの作成(ALB) --------- 
+  cfnALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${NameBase}-ALBSecurityGroup
+      GroupDescription: http
+      VpcId: !ImportValue cfn-Network-Layer-VPCId
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort : 80
+          ToPort : 80
+          CidrIp: 0.0.0.0/0
+
+  # --------- セキュリティグループの作成(EC2) --------- 
+  cfnEC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${NameBase}-EC2SecurityGroup
+      GroupDescription: http,ssh
+      VpcId: !ImportValue cfn-Network-Layer-VPCId
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort : 80
+          ToPort : 80
+          CidrIp: 0.0.0.0/0
+        -
+          IpProtocol: tcp
+          FromPort : 22
+          ToPort : 22
+          CidrIp: 0.0.0.0/0
+          # CidrIp: !Ref MyLocalIP
+
+  # --------- セキュリティグループの作成(RDS) --------- 
+  cfnRDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${NameBase}-RDSSecurityGroup
+      GroupDescription: mySQL
+      VpcId: !ImportValue cfn-Network-Layer-VPCId
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort : 3306
+          ToPort : 3306
+          SourceSecurityGroupId: !Ref cfnEC2SecurityGroup
+
+  # --------- IAMロールの作成 --------- 
+  cfnS3AccessRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ec2.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+
+  # --------- IAMポリシーの作成 --------- 
+  cfnS3AccessPolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub ${NameBase}-S3access
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+            - s3:ListBucket
+          Resource:
+            - !Sub arn:aws:s3:::${NameBase}
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:DeleteObject
+            - s3:PutObject
+          Resource:
+            - !Sub arn:aws:s3:::${NameBase}/*
+      Roles:
+        - !Ref cfnS3AccessRole
+
+  # --------- IAMインスタンスプロファイルの作成 --------- 
+  cfnS3AccessInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - !Ref cfnS3AccessRole
+
+  # --------- Outputs --------- 
+Outputs:
+  ALBSecurityGroupId:
+    Value: !Ref cfnALBSecurityGroup
+    Export: 
+      Name: cfn-Security-Layer-ALBSecurityGroupId
+
+  EC2SecurityGroupId:
+    Value: !Ref cfnEC2SecurityGroup
+    Export: 
+      Name: cfn-Security-Layer-EC2SecurityGroupId
+
+  RDSSecurityGroupId:
+    Value: !Ref cfnRDSSecurityGroup
+    Export: 
+      Name: cfn-Security-Layer-RDSSecurityGroupId
+
+  S3AccessInstanceProfileName:
+    Value: !Ref cfnS3AccessInstanceProfile
+    Export: 
+      Name: cfn-Security-Layer-S3AccessInstanceProfileName

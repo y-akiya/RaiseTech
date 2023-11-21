@@ -1,0 +1,34 @@
+- name: check nodejs installed
+  shell: bash -lc "node -v | grep {{ node_version }}"
+  register: nodejs_installed
+  changed_when: no
+  ignore_errors: yes
+
+- name: install nvm
+  ansible.builtin.shell: >
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+  args:
+    creates: ~/.nvm/nvm.sh"
+  when: nodejs_installed is failed
+
+- name: use nvm
+  shell: bash -lc "source ~/.nvm/nvm.sh"
+  when: nodejs_installed is failed
+
+- name: install nodejs
+  shell: bash -lc "nvm install {{ node_version }}"
+  when: nodejs_installed is failed
+
+- name: use nodejs
+  shell: bash -lc "nvm use {{ node_version }}"
+  when: nodejs_installed is failed
+
+- name: check yarn installed
+  shell: bash -lc "yarn -v"
+  register: yarn_installed
+  changed_when: no
+  ignore_errors: yes
+
+- name: install yarn if not installed
+  shell: bash -lc "npm install --global yarn"
+  when: yarn_installed is failed

@@ -1,0 +1,29 @@
+--- 
+- name: remove mariadb
+  yum: 
+    name: mariadb-libs
+    state: absent
+  become: yes
+
+- name: import GPG key 
+  ansible.builtin.rpm_key:
+    state: present
+    key: https://repo.mysql.com/RPM-GPG-KEY-mysql-2022
+  become: yes
+
+- name: install mysql repository
+  yum:
+    name: 'https://repo.mysql.com/mysql80-community-release-el7-11.noarch.rpm'
+    state: present
+  become: yes
+
+- name: install mysql
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - mysql-community-client
+      - mysql-community-devel
+  become: yes
+
