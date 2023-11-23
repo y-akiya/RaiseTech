@@ -1,7 +1,7 @@
-# RaiseTech ASWコース
+# RaiseTech AWSコース
 
 ## 概要
-RaiseTech ASWコースの課題提出用のリポジトリです。
+RaiseTech AWSコースの課題提出用のリポジトリです。
 
 ## 最終的に実現したこと 
 AnsibleやCircleCIを用いて、AWS上でインフラ環境構築から
